@@ -14,7 +14,11 @@ from urllib import request
 
 if __name__ == '__main__':
 
+    # Build the correct directory structure
+    # for the project if it doesn't exist.
     data_dir = os.path.abspath('../data')
+    if not os.path.exists(data_dir):
+        os.mkdir(data_dir)
     print(f'Downloading NFL datasets into {data_dir}...')
 
     # Data provided by FiveThirtyEight, https://fivethirtyeight.com/
