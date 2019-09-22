@@ -1,0 +1,12 @@
+# PyCharm IDE Project Files
+.idea/
+
+# All of the dataset files, which can be large and 
+# can be reproduced easily. 
+data/
+
+# All figures, which can easily be produced. 
+figures/
+
+# The checkpoint directory for our notebooks. 
+notebooks/.ipynb_checkpoints 
