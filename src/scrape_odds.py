@@ -12,24 +12,28 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-
-
 GameOdds = namedtuple('GameOdds', 'home_team away_team spread date id_code')
 
 def info_is_bad(info):
-    return (info == '') or ('XX' in info) or ('PK' in info)
+    return (info == '') or ('XX' in info)
 
 def get_spread(home_info, away_info):
     home_bad = info_is_bad(home_info)
     away_bad = info_is_bad(home_info)
 
     if home_bad or away_bad:
+        print(f'Bad information in {home_info} or {away_info}')
         return None
     else:
         if 'u' in home_info:
-            return float(away_info.split()[0])
+            return extract_spread(away_info)
         elif 'u' in away_info:
-            return float(home_info.split()[0])
+            return extract_spread(home_info)
+
+def extract_spread(info):
+    if 'PK' in info:
+        info = info.strip('PK')
+    return float(info.split()[0])
 
 def create_df(odds):
     df = pd.DataFrame.from_records(
