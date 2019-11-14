@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from joblib import dump, load
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score 
+from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.model_selection import train_test_split 
 
 
@@ -75,28 +75,26 @@ def add_targets(data):
     data['point_diff'] = data['score1'] - data['score2']
     data['point_asym'] = data['point_diff'] / data['point_sum']
 
-def train_model(data, features, target):
+def train_model(data, features, target, metrics=None, **model_kwargs):
     """ Training logistic regression model. """
 
     x_train, x_test, y_train, y_test = train_test_split(
         data[features].values, data[target].values)
 
-    model = LogisticRegression(solver='lbfgs')
+    model = LogisticRegression(solver='lbfgs', **model_kwargs)
     model.fit(x_train, y_train.ravel())
 
     # Metric report 
     y_pred_train = model.predict(x_train)
     y_pred_test = model.predict(x_test)
 
-    score_train = accuracy_score(y_train, y_pred_train)
-    score_test = accuracy_score(y_test, y_pred_test)
+    train_scores = []
+    test_scores = [] 
+    for metric in metrics:
+        train_scores.append(metric(y_train, y_pred_train))
+        test_scores.append(metric(y_test, y_pred_test))
 
-    print(("Training Accuracy {0:6.4f},"
-            " Testing Accuracy {1:6.4f}".format(
-                score_train, score_test
-            )))
-    
-    return model 
+    return model, test_scores, train_scores
 
 def predict(data, model, features):
     """ Predictions added to dataframe inplace. """
@@ -120,7 +118,14 @@ def print_predictions(data):
             game['team2'],
             int(game['elo2_pre']),
             100 * (1 - game['preds'])))
-        
+
+def generate_hyperparameters():
+    pars = {}
+    pars['C'] = np.random.uniform(1e-6, 1e1)
+    pars['fit_intercept'] = np.random.choice([False, True])
+
+    return pars
+
 if __name__ == "__main__":
 
     # Basic application setup
@@ -129,6 +134,8 @@ if __name__ == "__main__":
                         help='run in training mode')
     parser.add_argument('--predict', action='store_true',
                         help='run in prediction mode')
+    parser.add_argument('--optimize', action='store_true',
+                        help='run in optimization mode')
     parser.add_argument('--model', type=str, required=False,
                         help='trained model file')
     parser.add_argument('--save_name', type=str, default='model.pkl',
@@ -146,7 +153,11 @@ if __name__ == "__main__":
     if args.train:
         print('Running in training mode.')
         data = load_clean_dataset() 
-        model = train_model(data, features, target)
+
+        metrics = [accuracy_score, roc_auc_score]
+        model_kwargs = {}
+        model, test_scores, train_scores = train_model(data, features, target,
+                                                       metrics, model_kwargs)
         dump(model, args.save_name)
         
     if args.predict:
@@ -159,3 +170,20 @@ if __name__ == "__main__":
         preds = predict(data, model, features)
         data['preds'] = preds
         print_predictions(data)
+
+    if args.optimize:
+        data = load_clean_dataset()
+        metrics = [accuracy_score, roc_auc_score]
+        
+        best_score = 0 
+        metric_choice = 1 
+        for i in range(1000):
+            pars = generate_hyperparameters()
+            model, test_scores, train_scores = train_model(data, features, target,
+                                                           metrics, **pars)
+            if test_scores[metric_choice] > best_score:
+                dump(model, 'optimized_model.pkl')
+                print('Iteration {0:4d}, Best model found: {1:6.4f} -> {2:6.4f}'.format(
+                    i, best_score, test_scores[metric_choice]))
+                best_score = test_scores[metric_choice]
+                print(pars)
