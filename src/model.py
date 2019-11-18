@@ -27,7 +27,7 @@ def validate_args(args):
 def load_clean_dataset():
     """ Load and clean our dataset downloaded from 
     the download_dataset.py file. """
-    data_dir = '../data/'
+    data_dir = os.path.dirname(os.path.abspath(__file__)) + '/../data/'
     data = pd.read_csv(data_dir + 'historical_data.csv')
     data = data[np.logical_not(data['score1'].isna())]
     data = data[np.logical_not(data['score2'].isna())]
@@ -41,7 +41,7 @@ def load_clean_dataset():
     return data
 
 def load_weekly_preds():
-    data_dir = '../data/'
+    data_dir = os.path.dirname(os.path.abspath(__file__)) + '/../data/'
     data = pd.read_csv(data_dir + 'historical_data.csv')
     data['date'] = pd.to_datetime(data['date'])
     add_elo_features(data)
