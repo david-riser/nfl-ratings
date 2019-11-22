@@ -24,15 +24,16 @@ def validate_args(args):
                "training one from scratch with --train."))
         exit()
 
-def load_clean_dataset():
+def load_clean_dataset(start_year=1959):
     """ Load and clean our dataset downloaded from 
     the download_dataset.py file. """
     data_dir = os.path.dirname(os.path.abspath(__file__)) + '/../data/'
-    data = pd.read_csv(data_dir + 'historical_data.csv')
+    #data = pd.read_csv(data_dir + 'historical_data.csv')
+    data = pd.read_csv(data_dir + 'glicko.csv')
     data = data[np.logical_not(data['score1'].isna())]
     data = data[np.logical_not(data['score2'].isna())]
 
-    data = data[data['season'] > 1959]
+    data = data[data['season'] > start_year]
     data = data[data['score1'] != data['score2']]
     data['date'] = pd.to_datetime(data['date'])    
 
@@ -42,7 +43,8 @@ def load_clean_dataset():
 
 def load_weekly_preds():
     data_dir = os.path.dirname(os.path.abspath(__file__)) + '/../data/'
-    data = pd.read_csv(data_dir + 'historical_data.csv')
+    # data = pd.read_csv(data_dir + 'historical_data.csv')
+    data = pd.read_csv(data_dir + 'glicko.csv')
     data['date'] = pd.to_datetime(data['date'])
     add_elo_features(data)
     add_targets(data)
@@ -140,24 +142,25 @@ if __name__ == "__main__":
                         help='trained model file')
     parser.add_argument('--save_name', type=str, default='model.pkl',
                         help='save name for output model')
-
+    parser.add_argument('--start_year', type=int, default=1960)
+    
     # Get and validate the configuration 
     args = parser.parse_args()
     validate_args(args)
 
     # Training options 
-    features = ['elo_sum', 'elo_diff', 'elo_asym', 'elo_prob1']
+    features = ['elo_sum', 'elo_diff', 'elo_asym', 'elo_prob1', 'glicko_prob']
     target = ['outcome']
 
     # Run training and prediction, if required. 
     if args.train:
         print('Running in training mode.')
-        data = load_clean_dataset() 
+        data = load_clean_dataset(start_year=args.start_year) 
 
         metrics = [accuracy_score, roc_auc_score]
         model_kwargs = {}
         model, test_scores, train_scores = train_model(data, features, target,
-                                                       metrics, model_kwargs)
+                                                       metrics, **model_kwargs)
         dump(model, args.save_name)
         
     if args.predict:
