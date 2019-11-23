@@ -121,7 +121,7 @@ def glicko(teams1, teams2, outcomes, seasons, init_mean=1500,
             mu2[i] = ratings[team2].value 
             sig2[i] = ratings[team2].deviation
         
-    return mu1, mu2, sig1, sig2, glicko_prob
+    return mu1, mu2, sig1, sig2, glicko_prob, ratings
 
 def brier_score(pred, outcome):
     return np.sum(25 - 100 * (outcome - pred)**2)
@@ -134,7 +134,7 @@ def binary_cross_entropy(pred, outcome):
     
 if __name__ == "__main__":
 
-    from model import load_clean_dataset
+    from model import load_clean_dataset, load_weekly_preds
     from sklearn.metrics import accuracy_score
     data = load_clean_dataset(start_year=2014)
     valid_idx = np.where(data['season'] > 2015)[0]
@@ -165,15 +165,27 @@ if __name__ == "__main__":
         ))
      """ 
 
-    val1, val2, dev1, dev2, prob = glicko(
+    val1, val2, dev1, dev2, prob, ratings = glicko(
         data['team1'].values, data['team2'].values,
         data['outcome'].values, data['season'].values,
         init_mean=1500, init_std=350, c=5.0, iterations=5)
 
     data['glicko_prob'] = prob 
 
+    # Save for training of ML model in next step.
     save_dir = os.path.normpath(
         os.path.dirname(os.path.abspath(__file__)) + '/../data/glicko.csv')
     data.to_csv(save_dir, index=False)
 
-    
+    # Save for prediction.
+    weekly = load_weekly_preds()
+    gprob = np.zeros(len(weekly))
+
+    # Predict for this week
+    for i, game in weekly.iterrows():
+        gprob[i] = predict(ratings[game['team1']], ratings[game['team2']])
+
+    weekly['glicko_prob'] = gprob
+    save_dir = os.path.normpath(
+        os.path.dirname(os.path.abspath(__file__)) + '/../data/glicko_weekly.csv')
+    weekly.to_csv(save_dir, index=False)
