@@ -182,8 +182,10 @@ if __name__ == "__main__":
     gprob = np.zeros(len(weekly))
 
     # Predict for this week
-    for i, game in weekly.iterrows():
-        gprob[i] = predict(ratings[game['team1']], ratings[game['team2']])
+    for i in range(len(weekly)):
+        rating1 = ratings[weekly['team1'].values[i]]
+        rating2 = ratings[weekly['team2'].values[i]]
+        gprob[i] = predict(rating1, rating2)
 
     weekly['glicko_prob'] = gprob
     save_dir = os.path.normpath(

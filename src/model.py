@@ -44,7 +44,7 @@ def load_clean_dataset(start_year=1959):
 def load_weekly_preds():
     data_dir = os.path.dirname(os.path.abspath(__file__)) + '/../data/'
     # data = pd.read_csv(data_dir + 'historical_data.csv')
-    data = pd.read_csv(data_dir + 'glicko.csv')
+    data = pd.read_csv(data_dir + 'glicko_weekly.csv')
     data['date'] = pd.to_datetime(data['date'])
     add_elo_features(data)
     add_targets(data)
