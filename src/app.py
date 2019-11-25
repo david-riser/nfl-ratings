@@ -1,43 +1,21 @@
-""" 
+import dash
+import dash_table
+import os 
+import pandas as pd
 
-David Riser 
-October 20, 2019
-app.py 
+project_dir = os.path.dirname(os.path.abspath(__file__)) + '/../'
+df = pd.read_csv(os.path.join(project_dir, 'data/glicko.csv'))
 
-Dash application to serve predictions for NFL 
-games. 
+display_cols = ['team1', 'team2', 'season', 'date', 'elo_prob1', 'glicko_prob',
+                'outcome']
 
-"""
+app = dash.Dash(__name__)
 
-# Python Standard Libs
-import os
-
-# Third Party Libs 
-import dash_core_components as dcc
-import dash_html_components as html
-import flask 
-import pandas as pd 
-import plotly_express as px
-
-from dash import Dash 
-from dash.dependencies import (Input, Output)
-
-data_dir = os.path.normpath(
-    os.path.dirname(os.path.abspath(__file__)) + '/../data'
+app.layout = dash_table.DataTable(
+    id='table',
+    columns=[{"name": i, "id": i} for i in display_cols],
+    data=df.to_dict("rows"),
 )
 
-data = pd.read_csv(data_dir + '/weekly_preds.csv')
-print('Loading data from: {0}'.format(data_dir))
-print('Loaded {} games.'.format(len(data)))
-
-app = Dash('app', server=flask.Flask('app'))
-app.layout = html.Div([
-    html.H1('Hello World!'),
-    dcc.Graph(figure=px.scatter(
-        data, x='elo_prob1', y='team1'
-    ))
-])
-
-
 if __name__ == '__main__':
-    app.run_server(port=5678, debug=True)
+    app.run_server(debug=True)

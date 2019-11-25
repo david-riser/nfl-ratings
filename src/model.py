@@ -41,10 +41,14 @@ def load_clean_dataset(start_year=1959):
     add_targets(data)
     return data
 
-def load_weekly_preds():
+def load_weekly_preds(glicko=False):
     data_dir = os.path.dirname(os.path.abspath(__file__)) + '/../data/'
-    # data = pd.read_csv(data_dir + 'historical_data.csv')
-    data = pd.read_csv(data_dir + 'glicko_weekly.csv')
+    
+    if glicko:
+        data = pd.read_csv(data_dir + 'glicko_weekly.csv')
+    else:
+        data = pd.read_csv(data_dir + 'historical_data.csv')
+
     data['date'] = pd.to_datetime(data['date'])
     add_elo_features(data)
     add_targets(data)
@@ -165,7 +169,7 @@ if __name__ == "__main__":
         
     if args.predict:
         print('Running in prediction mode.')
-        data = load_weekly_preds()
+        data = load_weekly_preds(glicko=True)
 
         if not args.train:
             model = load(args.model)

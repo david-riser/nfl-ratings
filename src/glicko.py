@@ -139,36 +139,40 @@ if __name__ == "__main__":
     data = load_clean_dataset(start_year=2014)
     valid_idx = np.where(data['season'] > 2015)[0]
 
-    """
-    This analysis shows that a low value of C is better, 
-    preseving ratings over off-seasons.  It also shows that 
-    a few passes of the algorithm are better.
-    C = 5.0, iterations = 5 will be used. 
 
-    cs = np.random.uniform(0.1, 40, size=50)
-    iterations = np.random.randint(1,20,size=50)
+
+    """
+    # This analysis shows that a low value of C is better, 
+    # preseving ratings over off-seasons.  It also shows that 
+    # a few passes of the algorithm are better.
+    # C = 5.0, iterations = 5 will be used. 
+
+    best = 0 
+    cs = np.random.uniform(0.1, 40, size=500)
+    iterations = np.random.randint(1,20,size=500)
     for current_c, current_iter in zip(cs, iterations):
-        val1, val2, dev1, dev2, prob = glicko(
+        val1, val2, dev1, dev2, prob, rats = glicko(
             data['team1'].values, data['team2'].values,
             data['outcome'].values, data['season'].values,
             init_mean=1500, init_std=350, c=current_c, iterations=current_iter)
         
         data['glicko_prob'] = prob 
 
-        fmt = '{0:6.4f} {1:4d} {2:6.4f} {3:6.4f} {4:6.4f}'
-        print(fmt.format(
-            current_c, current_iter,
-            accuracy_score(data.iloc[valid_idx]['outcome'], data.iloc[valid_idx]['glicko_prob'].round()),
-            brier_score(data.iloc[valid_idx]['outcome'], data.iloc[valid_idx]['glicko_prob']),
-            binary_cross_entropy(data.iloc[valid_idx]['glicko_prob'].values,
-                                 data.iloc[valid_idx]['outcome'].values)
-        ))
-     """ 
-
+        score = brier_score(data.iloc[valid_idx]['outcome'], data.iloc[valid_idx]['glicko_prob'])
+        fmt = '{0:6.4f} {1:4d} {2:6.4f} {3:6.4f}'
+        if score > best:
+            print(fmt.format(
+                current_c, current_iter,
+                accuracy_score(data.iloc[valid_idx]['outcome'], data.iloc[valid_idx]['glicko_prob'].round()),
+                brier_score(data.iloc[valid_idx]['outcome'], data.iloc[valid_idx]['glicko_prob']),
+            ))
+            best = score
+            
+    """
     val1, val2, dev1, dev2, prob, ratings = glicko(
         data['team1'].values, data['team2'].values,
         data['outcome'].values, data['season'].values,
-        init_mean=1500, init_std=350, c=5.0, iterations=5)
+        init_mean=1500, init_std=350, c=0.274, iterations=12)
 
     data['glicko_prob'] = prob 
 
@@ -178,7 +182,7 @@ if __name__ == "__main__":
     data.to_csv(save_dir, index=False)
 
     # Save for prediction.
-    weekly = load_weekly_preds()
+    weekly = load_weekly_preds(glicko=False)
     gprob = np.zeros(len(weekly))
 
     # Predict for this week
@@ -191,3 +195,4 @@ if __name__ == "__main__":
     save_dir = os.path.normpath(
         os.path.dirname(os.path.abspath(__file__)) + '/../data/glicko_weekly.csv')
     weekly.to_csv(save_dir, index=False)
+    
