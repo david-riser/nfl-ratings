@@ -153,7 +153,8 @@ if __name__ == "__main__":
     validate_args(args)
 
     # Training options 
-    features = ['elo_sum', 'elo_diff', 'elo_asym', 'elo_prob1', 'glicko_prob']
+    features = ['elo_sum', 'elo_diff', 'elo_asym', 'elo_prob1', 'glicko_prob',
+                'elo1_pre', 'elo2_pre', 'qbelo_prob1']
     target = ['outcome']
 
     # Run training and prediction, if required. 
